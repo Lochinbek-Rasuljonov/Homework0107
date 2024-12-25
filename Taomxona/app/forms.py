@@ -1,5 +1,5 @@
 from django import forms
-from .models import Food
+from .models import Food, Comment
 
 class FoodForm(forms.ModelForm):
     class Meta:
@@ -25,4 +25,12 @@ class FoodForm(forms.ModelForm):
             'image': forms.FileInput(attrs={
                 'class': 'form-control'
             }),
+        }
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['text']
+        widgets = {
+            'text': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Izohingizni kiriting...', 'rows': 3}),
         }

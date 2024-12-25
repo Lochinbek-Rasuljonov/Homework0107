@@ -1,7 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Category, Food
-from .forms import FoodForm
+from .models import Category, Food, Comment
+from .forms import FoodForm, CommentForm
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import login_required
 
 def home(request):
     foods = Food.objects.all()
@@ -13,7 +14,35 @@ def all_foods(request):
 
 def food_detail(request, food_id):
     food = get_object_or_404(Food, id=food_id)
-    return render(request, 'food_detail.html', {'food': food})
+    comments = food.comments.all()
+
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            return redirect('login')
+
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.food = food
+            comment.user = request.user
+            comment.save()
+            return redirect('food_detail', food_id=food.id)
+    else:
+        form = CommentForm()
+
+    return render(request, 'food_detail.html', {
+        'food': food,
+        'comments': comments,
+        'form': form,
+        'user': request.user,
+    })
+
+@login_required
+def delete_comment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+    if request.user == comment.user or request.user.is_superuser:
+        comment.delete()
+    return redirect('food_detail', food_id=comment.food.id)
 
 def category_foods(request, category_id):
     category = get_object_or_404(Category, id=category_id)
